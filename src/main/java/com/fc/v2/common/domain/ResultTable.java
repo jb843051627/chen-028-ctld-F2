@@ -28,6 +28,11 @@ public class ResultTable {
      */
     private Object data;
 
+    /**
+     * 没闭上那一类的条数：与台账一次查出、同一回给出（追加字段，不动原版式）
+     */
+    private Long openCount;
+
     public Integer getCode() {
         return code;
     }
@@ -58,6 +63,14 @@ public class ResultTable {
 
     public void setData(Object data) {
         this.data = data;
+    }
+
+    public Long getOpenCount() {
+        return openCount;
+    }
+
+    public void setOpenCount(Long openCount) {
+        this.openCount = openCount;
     }
 
     /**

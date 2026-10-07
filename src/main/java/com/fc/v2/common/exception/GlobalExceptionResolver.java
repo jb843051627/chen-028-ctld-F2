@@ -110,6 +110,14 @@ public class GlobalExceptionResolver{
     }
     
     /**
+     * 流转单办事规矩被拒：固定码（460 来件不成立／461 同件重放）+ 点到具体档/栏的话
+     */
+    @ExceptionHandler(com.fc.v2.common.exception.ctld.CaseFlowException.class)
+    public AjaxResult handleCaseFlow(com.fc.v2.common.exception.ctld.CaseFlowException e) {
+        return AjaxResult.error(e.getCode(), e.getMessage());
+    }
+
+    /**
      * 拦截未知的运行时异常
      */
     @ExceptionHandler(RuntimeException.class)

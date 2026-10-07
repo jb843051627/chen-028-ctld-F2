@@ -5,18 +5,67 @@
 CREATE TABLE IF NOT EXISTS t_ctld_case_flow (
   id bigint NOT NULL COMMENT '主键',
   biz_no varchar(64) DEFAULT NULL COMMENT '超标地块纳入受限与解除的办件件次',
-  stage int DEFAULT NULL COMMENT '当前关次 0..3（初核受理/纳入受限/措施核查/解除复核）',
+  plot_no varchar(64) DEFAULT NULL COMMENT '地块码（起件四要件之一）',
+  zone_no varchar(64) DEFAULT NULL COMMENT '所属分区代号（起件四要件之二，对分区册）',
+  cd_value decimal(10,3) DEFAULT NULL COMMENT '土壤镉实测值（起件四要件之三）',
+  measure_name varchar(128) DEFAULT NULL COMMENT '拟采用的措施名目（起件四要件之四）',
+  submitter varchar(64) DEFAULT NULL COMMENT '递件人（本人方可收回反映）',
+  stage int DEFAULT NULL COMMENT '当前关次 0..3（初核受理/纳入受限/措施核查/解除复核，档数由后端从履历轧出）',
   status int DEFAULT NULL COMMENT '单子走到哪一关 0未起 1在办 2已封住',
   content varchar(255) DEFAULT NULL COMMENT '一关一记',
+  stage_note varchar(500) DEFAULT NULL COMMENT '当前档留下的那一句按语（一档只许一句，二次投来不覆不存）',
+  limit_pass int DEFAULT NULL COMMENT '纳入受限档核收 0未核 1可 2不可（不记可不许开工）',
+  witness1 varchar(64) DEFAULT NULL COMMENT '解除复核见证岗第一笔',
+  witness2 varchar(64) DEFAULT NULL COMMENT '解除复核见证岗第二笔（须与第一笔不同岗）',
+  voucher_no varchar(128) DEFAULT NULL COMMENT '措施核验凭证串（写回本行方闭解除复核门槛）',
+  close_kind int DEFAULT NULL COMMENT '收口情形 1走满末档 2递件人收回 3分区并走 NULL尚未收口',
+  enter_count int DEFAULT '0' COMMENT '本件累计入档笔数（后端从履历轧出，不信报文序号）',
   last_action varchar(64) DEFAULT NULL COMMENT '最近一次挪关动作',
+  active_slot varchar(64) GENERATED ALWAYS AS (CASE WHEN status = 1 THEN plot_no ELSE NULL END) VIRTUAL COMMENT '在办活动槽=地块码，唯一索引保一地一活件',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
   create_time datetime DEFAULT NULL COMMENT '创建时间',
   update_by varchar(64) DEFAULT NULL COMMENT '更新者',
   update_time datetime DEFAULT NULL COMMENT '更新时间',
   remark varchar(500) DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_plot_active (active_slot)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='超标地块纳入受限与解除办件流转单';
+
+-- 变更履历（追溯串，只追加不改写；倒着回放从这里取数，只看不写）
+CREATE TABLE IF NOT EXISTS t_ctld_case_flow_trace (
+  id bigint NOT NULL COMMENT '主键',
+  case_id bigint NOT NULL COMMENT '所属流转单 id',
+  seq int NOT NULL COMMENT '本件内时序序号（挪档与留痕同事务内取）',
+  stage int NOT NULL COMMENT '落这笔时单据所在档 0..3',
+  action varchar(32) NOT NULL COMMENT '动作 OPEN/NOTE/ACCEPT/WITNESS/VOUCHER/ADVANCE/ROLLBACK/CLOSE',
+  note_text varchar(500) DEFAULT NULL COMMENT '本笔按语原文（回退时照原先后转来，不改字）',
+  close_kind int DEFAULT NULL COMMENT 'CLOSE 笔的收口情形 1走满末档 2收回 3并走',
+  req_no varchar(64) DEFAULT NULL COMMENT '递件笔号（同号重复=幂等；异号同刻=两笔各记）',
+  operator varchar(64) DEFAULT NULL COMMENT '落笔者',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除（履历只追加，不置1）',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_case_seq (case_id, seq),
+  KEY idx_case_time (case_id, create_time, seq)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流转单变更履历（追溯串，只追加不改写）';
+
+-- 同件重递幂等账：同一件号+动作+递件笔号再投，照头一笔回话，不再落痕
+CREATE TABLE IF NOT EXISTS t_ctld_case_flow_idem (
+  id bigint NOT NULL COMMENT '主键',
+  case_id bigint NOT NULL COMMENT '所属流转单 id（起件笔以 0 占位）',
+  action varchar(32) NOT NULL COMMENT '被幂等的动作名',
+  req_no varchar(64) NOT NULL COMMENT '递件笔号',
+  result_code int DEFAULT NULL COMMENT '头一笔处理结果码',
+  result_msg varchar(255) DEFAULT NULL COMMENT '头一笔回话原文',
+  result_stage int DEFAULT NULL COMMENT '处理后停在第几档',
+  result_case_id bigint DEFAULT NULL COMMENT '起件笔发号后的真实件 id',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_case_action_req (case_id, action, req_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流转单同件重递幂等账';
 
 CREATE TABLE IF NOT EXISTS t_ctld_cert_bill (
   id bigint NOT NULL COMMENT '主键',
