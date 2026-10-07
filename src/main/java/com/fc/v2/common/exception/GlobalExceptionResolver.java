@@ -110,6 +110,17 @@ public class GlobalExceptionResolver{
     }
     
     /**
+     * 办件流转规则破例：缺样、越档、门槛不齐、合口件动手等，消息已点到具体档与栏，
+     * 照原话回到面上，不许揉成“信息不全”。
+     */
+    @ExceptionHandler(com.fc.v2.common.exception.ctld.CaseFlowRuleException.class)
+    public AjaxResult caseFlowRuleException(com.fc.v2.common.exception.ctld.CaseFlowRuleException e)
+    {
+        logger.warn("办件流转挡回: {}", e.getMessage());
+        return AjaxResult.error(e.getMessage());
+    }
+
+    /**
      * 拦截未知的运行时异常
      */
     @ExceptionHandler(RuntimeException.class)

@@ -5,9 +5,17 @@
 CREATE TABLE IF NOT EXISTS t_ctld_case_flow (
   id bigint NOT NULL COMMENT '主键',
   biz_no varchar(64) DEFAULT NULL COMMENT '超标地块纳入受限与解除的办件件次',
-  stage int DEFAULT NULL COMMENT '当前关次 0..3（初核受理/纳入受限/措施核查/解除复核）',
+  plot_no varchar(64) DEFAULT NULL COMMENT '地块码（起件四样之一）',
+  zone_no varchar(64) DEFAULT NULL COMMENT '所属分区代号（起件四样之一，读分区册对名）',
+  cad_value decimal(12,3) DEFAULT NULL COMMENT '土壤镉实测那一个数（起件四样之一）',
+  measure_name varchar(255) DEFAULT NULL COMMENT '拟采用的措施名目（起件四样之一）',
+  cert_no varchar(128) DEFAULT NULL COMMENT '措施核验凭证那一串（进解除复核时写回本行）',
+  applicant varchar(64) DEFAULT NULL COMMENT '递件人（其收回反映即视同收口）',
+  close_kind int DEFAULT NULL COMMENT '收口来路 null未收口 0走满末档 1递件人收回 2分区并走',
+  open_key varchar(64) DEFAULT NULL COMMENT '活件占位键：未闭口件与地块码一一对应，闭口置空',
+  stage int DEFAULT NULL COMMENT '当前关次 0..3（初核受理/纳入受限/措施核查/解除复核）——由后端按履历轧出，报文序号只作参考',
   status int DEFAULT NULL COMMENT '单子走到哪一关 0未起 1在办 2已封住',
-  content varchar(255) DEFAULT NULL COMMENT '一关一记',
+  content varchar(255) DEFAULT NULL COMMENT '一关一记（本关按语，回退清空、重来重记）',
   last_action varchar(64) DEFAULT NULL COMMENT '最近一次挪关动作',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
@@ -15,8 +23,32 @@ CREATE TABLE IF NOT EXISTS t_ctld_case_flow (
   update_by varchar(64) DEFAULT NULL COMMENT '更新者',
   update_time datetime DEFAULT NULL COMMENT '更新时间',
   remark varchar(500) DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ctld_case_flow_open (open_key) COMMENT '一处地块同时只许一条没闭上的件；闭口置空不占键'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='超标地块纳入受限与解除办件流转单';
+
+-- 本件变更履历：每一关那一句按语连同提交那一刻按时序追加，只增不改不删；
+-- 回放（倒着演）与年底审计取数只认这一张表，不写回主表。
+CREATE TABLE IF NOT EXISTS t_ctld_case_flow_trace (
+  id bigint NOT NULL COMMENT '主键',
+  case_id bigint NOT NULL COMMENT '所属办件 t_ctld_case_flow.id',
+  biz_no varchar(64) DEFAULT NULL COMMENT '办件件次（冗余，便于审计取数）',
+  seq int NOT NULL COMMENT '时序笔次（小者在前，同刻两笔各记各，不许并笔、不许吞笔）',
+  stage int NOT NULL COMMENT '落在哪一关 0..3',
+  round_no int NOT NULL COMMENT '该关第几轮驻留（回退后再挪到本关从头累计，从1起）',
+  action_kind varchar(32) NOT NULL COMMENT '动作名目 OPEN受理/NOTE按语/ACCEPT核收可/WITNESS见证/CERT凭证/WITHDRAW收回/ZONE_MERGE并走/ADVANCE挪入/ROLLBACK挪回/CLOSE闭口',
+  note varchar(500) DEFAULT NULL COMMENT '这一笔的原话（按语/凭证串/收口来由，照原样留底）',
+  actor varchar(64) DEFAULT NULL COMMENT '落笔者',
+  write_time datetime NOT NULL COMMENT '提交那一刻（按此时序倒演）',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  update_by varchar(64) DEFAULT NULL COMMENT '更新者',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  remark varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (id),
+  KEY idx_ctld_flow_trace_case (case_id, seq)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='超标地块办件变更履历（一关一记·只追加）';
 
 CREATE TABLE IF NOT EXISTS t_ctld_cert_bill (
   id bigint NOT NULL COMMENT '主键',

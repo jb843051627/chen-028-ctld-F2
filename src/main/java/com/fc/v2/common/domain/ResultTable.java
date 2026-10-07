@@ -28,6 +28,11 @@ public class ResultTable {
      */
     private Object data;
 
+    /** 没闭上那一类的条数：与台账同一回给出，前端照此显示，不许另起一套数法；
+     *  只有走带计数的台账口才回，其余老口版式一字不动 */
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private Long openCount;
+
     public Integer getCode() {
         return code;
     }
@@ -60,6 +65,14 @@ public class ResultTable {
         this.data = data;
     }
 
+    public Long getOpenCount() {
+        return openCount;
+    }
+
+    public void setOpenCount(Long openCount) {
+        this.openCount = openCount;
+    }
+
     /**
      * 构 建
      *
@@ -72,6 +85,15 @@ public class ResultTable {
         resultTable.setData(data);
         resultTable.setCode(0);
         resultTable.setCount(count);
+        return resultTable;
+    }
+
+    /**
+     * 台账数据与“没闭上的条数”同一回给出：两处数都由后端这一查定，屏上不另设口径。
+     */
+    public static ResultTable pageTable(long count, Object data, long openCount) {
+        ResultTable resultTable = pageTable(count, data);
+        resultTable.setOpenCount(openCount);
         return resultTable;
     }
 

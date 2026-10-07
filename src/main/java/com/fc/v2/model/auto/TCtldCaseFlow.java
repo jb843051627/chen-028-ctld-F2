@@ -12,6 +12,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -36,7 +37,47 @@ public class TCtldCaseFlow implements Serializable {
     @ApiModelProperty(value = "超标地块纳入受限与解除的办件件次")
     private String bizNo;
 
-    /** 当前关次 0..3（初核受理/纳入受限/措施核查/解除复核） */
+    /** 地块码（起件四样之一） */
+    @TableField("plot_no")
+    @ApiModelProperty(value = "地块码（起件四样之一）")
+    private String plotNo;
+
+    /** 所属分区代号（起件四样之一，读分区册对名） */
+    @TableField("zone_no")
+    @ApiModelProperty(value = "所属分区代号（起件四样之一）")
+    private String zoneNo;
+
+    /** 土壤镉实测那一个数（起件四样之一） */
+    @TableField("cad_value")
+    @ApiModelProperty(value = "土壤镉实测那一个数（起件四样之一）")
+    private BigDecimal cadValue;
+
+    /** 拟采用的措施名目（起件四样之一） */
+    @TableField("measure_name")
+    @ApiModelProperty(value = "拟采用的措施名目（起件四样之一）")
+    private String measureName;
+
+    /** 措施核验凭证那一串（进解除复核时写回本行） */
+    @TableField("cert_no")
+    @ApiModelProperty(value = "措施核验凭证那一串（进解除复核时写回本行）")
+    private String certNo;
+
+    /** 递件人（其收回反映即视同收口） */
+    @TableField("applicant")
+    @ApiModelProperty(value = "递件人")
+    private String applicant;
+
+    /** 收口来路 null未收口 0走满末档 1递件人收回 2分区并走 */
+    @TableField("close_kind")
+    @ApiModelProperty(value = "收口来路 null未收口 0走满末档 1递件人收回 2分区并走")
+    private Integer closeKind;
+
+    /** 活件占位键：未闭口件与地块码一一对应，闭口置空 */
+    @TableField("open_key")
+    @ApiModelProperty(value = "活件占位键，闭口置空")
+    private String openKey;
+
+    /** 当前关次 0..3（初核受理/纳入受限/措施核查/解除复核）——由后端按履历轧出，报文序号只作参考 */
     @TableField("stage")
     @ApiModelProperty(value = "当前关次 0..3（初核受理/纳入受限/措施核查/解除复核）")
     private Integer stage;
@@ -102,6 +143,70 @@ public class TCtldCaseFlow implements Serializable {
 
     public void setBizNo(String bizNo) {
         this.bizNo = bizNo;
+    }
+
+    public String getPlotNo() {
+        return plotNo;
+    }
+
+    public void setPlotNo(String plotNo) {
+        this.plotNo = plotNo;
+    }
+
+    public String getZoneNo() {
+        return zoneNo;
+    }
+
+    public void setZoneNo(String zoneNo) {
+        this.zoneNo = zoneNo;
+    }
+
+    public BigDecimal getCadValue() {
+        return cadValue;
+    }
+
+    public void setCadValue(BigDecimal cadValue) {
+        this.cadValue = cadValue;
+    }
+
+    public String getMeasureName() {
+        return measureName;
+    }
+
+    public void setMeasureName(String measureName) {
+        this.measureName = measureName;
+    }
+
+    public String getCertNo() {
+        return certNo;
+    }
+
+    public void setCertNo(String certNo) {
+        this.certNo = certNo;
+    }
+
+    public String getApplicant() {
+        return applicant;
+    }
+
+    public void setApplicant(String applicant) {
+        this.applicant = applicant;
+    }
+
+    public Integer getCloseKind() {
+        return closeKind;
+    }
+
+    public void setCloseKind(Integer closeKind) {
+        this.closeKind = closeKind;
+    }
+
+    public String getOpenKey() {
+        return openKey;
+    }
+
+    public void setOpenKey(String openKey) {
+        this.openKey = openKey;
     }
 
     public Integer getStage() {
